@@ -33,7 +33,7 @@ struct ft5x_touch {
 } __packed;
 
 struct ft5x_touch_data {
-    __u16 padding;
+	__u16 padding;
 	__u8 touch_count;
 	struct ft5x_touch touches[FT5X_MAX_TOUCHES];
 } __packed;
@@ -41,7 +41,7 @@ struct ft5x_touch_data {
 struct ft5x_data {
 	struct i2c_client *client;
 	struct input_dev *input;
-//	struct gpio_desc *wake_gpio;
+//      struct gpio_desc *wake_gpio;
 	u32 max_x;
 	u32 max_y;
 	bool invert_x;
@@ -50,21 +50,19 @@ struct ft5x_data {
 };
 
 static int ft5x_read_touch_data(struct i2c_client *client,
-				   struct ft5x_touch_data *touch_data)
+				struct ft5x_touch_data *touch_data)
 {
 	u8 reg = FT5X_REG_TOUCHDATA;
 	struct i2c_msg msg[2] = {
 		{
-			.addr = client->addr,
-			.len = 1,
-			.buf = &reg
-		},
+		 .addr = client->addr,
+		 .len = 1,
+		 .buf = &reg},
 		{
-			.addr = client->addr,
-			.flags = I2C_M_RD,
-			.len = sizeof(struct ft5x_touch_data),
-			.buf = (u8 *)touch_data
-		}
+		 .addr = client->addr,
+		 .flags = I2C_M_RD,
+		 .len = sizeof(struct ft5x_touch_data),
+		 .buf = (u8 *) touch_data}
 	};
 
 	return i2c_transfer(client->adapter, msg, 2);
@@ -97,15 +95,15 @@ static irqreturn_t ft5x_irq(int irq, void *dev_id)
 	for (i = 0; i < touch_data.touch_count; i++) {
 		struct ft5x_touch *touch = &touch_data.touches[i];
 
-        u8 event = (touch->data[0] >> 4) & 0xF;
-        bool act = ft5x_touch_active(event);
+		u8 event = (touch->data[0] >> 4) & 0xF;
+		bool act = ft5x_touch_active(event);
 		slot = (touch->data[2] >> 4) & 0xF;
-        
+
 		input_mt_slot(data->input, slot);
 		input_mt_report_slot_state(data->input, MT_TOOL_FINGER, act);
 
-        if (!act)
-            continue;
+		if (!act)
+			continue;
 
 		x = ((touch->data[0] & 0xF) << 8) | touch->data[1];
 		y = ((touch->data[2] & 0xF) << 8) | touch->data[3];
@@ -136,7 +134,7 @@ static int ft5x_start(struct input_dev *dev)
 	struct ft5x_data *data = input_get_drvdata(dev);
 
 	enable_irq(data->client->irq);
-//	gpiod_set_value_cansleep(data->wake_gpio, 1);
+//      gpiod_set_value_cansleep(data->wake_gpio, 1);
 
 	return 0;
 }
@@ -146,9 +144,9 @@ static void ft5x_stop(struct input_dev *dev)
 	struct ft5x_data *data = input_get_drvdata(dev);
 
 	disable_irq(data->client->irq);
-//	i2c_smbus_write_byte_data(data->client, FT5X_REG_POWER,
-//				  FT5X_POWER_HIBERNATE);
-//	gpiod_set_value_cansleep(data->wake_gpio, 0);
+//      i2c_smbus_write_byte_data(data->client, FT5X_REG_POWER,
+//                                FT5X_POWER_HIBERNATE);
+//      gpiod_set_value_cansleep(data->wake_gpio, 0);
 }
 
 #ifdef CONFIG_PM_SLEEP
@@ -179,8 +177,7 @@ static int ft5x_resume(struct device *dev)
 
 static SIMPLE_DEV_PM_OPS(ft5x_pm_ops, ft5x_suspend, ft5x_resume);
 
-static int ft5x_probe(struct i2c_client *client,
-			 const struct i2c_device_id *id)
+static int ft5x_probe(struct i2c_client *client, const struct i2c_device_id *id)
 {
 	struct device *dev = &client->dev;
 	struct device_node *np = dev->of_node;
@@ -198,13 +195,13 @@ static int ft5x_probe(struct i2c_client *client,
 	if (!data)
 		return -ENOMEM;
 
-//	data->wake_gpio = devm_gpiod_get(dev, "wake", GPIOD_OUT_LOW);
-//	if (IS_ERR(data->wake_gpio)) {
-//		error = PTR_ERR(data->wake_gpio);
-//		if (error != -EPROBE_DEFER)
-//			dev_err(dev, "Error getting wake gpio: %d\n", error);
-//		return error;
-//	}
+//      data->wake_gpio = devm_gpiod_get(dev, "wake", GPIOD_OUT_LOW);
+//      if (IS_ERR(data->wake_gpio)) {
+//              error = PTR_ERR(data->wake_gpio);
+//              if (error != -EPROBE_DEFER)
+//                      dev_err(dev, "Error getting wake gpio: %d\n", error);
+//              return error;
+//      }
 
 	if (of_property_read_u32(np, "touchscreen-size-x", &data->max_x) ||
 	    of_property_read_u32(np, "touchscreen-size-y", &data->max_y)) {
@@ -270,24 +267,26 @@ static int ft5x_probe(struct i2c_client *client,
 }
 
 static const struct of_device_id ft5x_of_match[] = {
-	{ .compatible = "focaltech,ft5x" },
-	{ }
+	{.compatible = "focaltech,ft5x"},
+	{}
 };
+
 MODULE_DEVICE_TABLE(of, ft5x_of_match);
 
 /* This is useless for OF-enabled devices, but it is needed by I2C subsystem */
 static const struct i2c_device_id ft5x_i2c_id[] = {
-	{ },
+	{},
 };
+
 MODULE_DEVICE_TABLE(i2c, ft5x_i2c_id);
 
 static struct i2c_driver ft5x_driver = {
 	.driver = {
-		.owner	= THIS_MODULE,
-		.name	= "focaltech_ft5x",
-		.pm	= &ft5x_pm_ops,
-		.of_match_table = ft5x_of_match,
-	},
+		   .owner = THIS_MODULE,
+		   .name = "focaltech_ft5x",
+		   .pm = &ft5x_pm_ops,
+		   .of_match_table = ft5x_of_match,
+		   },
 	.probe = ft5x_probe,
 	.id_table = ft5x_i2c_id,
 };
@@ -295,5 +294,6 @@ static struct i2c_driver ft5x_driver = {
 module_i2c_driver(ft5x_driver);
 
 MODULE_DESCRIPTION("FocalTech FT5x I2C Touchscreen Driver");
-MODULE_AUTHOR("Bertrik Sikken <bertrik@sikken.nl> / Hans de Goede <hdegoede@redhat.com>");
+MODULE_AUTHOR
+    ("Bertrik Sikken <bertrik@sikken.nl> / Hans de Goede <hdegoede@redhat.com>");
 MODULE_LICENSE("GPL");
