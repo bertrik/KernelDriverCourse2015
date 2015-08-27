@@ -87,7 +87,7 @@ static irqreturn_t ft5x_irq(int irq, void *dev_id)
 	}
 
 	if (touch_data.touch_count > FT5X_MAX_TOUCHES) {
-		dev_warn(dev, "Too much touches %d > %d\n",
+		dev_warn(dev, "Too many touches %d > %d\n",
 			 touch_data.touch_count, FT5X_MAX_TOUCHES);
 		touch_data.touch_count = FT5X_MAX_TOUCHES;
 	}
