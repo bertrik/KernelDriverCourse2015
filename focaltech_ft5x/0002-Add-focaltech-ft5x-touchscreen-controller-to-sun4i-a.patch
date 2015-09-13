@@ -1,0 +1,25 @@
+From f6c6a38c9dcb8c057bf381be738970d9c8731509 Mon Sep 17 00:00:00 2001
+From: Bertrik Sikken <bertrik@sikken.nl>
+Date: Sun, 13 Sep 2015 19:46:22 +0200
+Subject: [PATCH 2/2] Add focaltech ft5x touchscreen controller to
+ sun4i-a10-chuwi-v7-cw0825 DTS
+
+---
+ arch/arm/boot/dts/sun4i-a10-chuwi-v7-cw0825.dts | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10-chuwi-v7-cw0825.dts b/arch/arm/boot/dts/sun4i-a10-chuwi-v7-cw0825.dts
+index 63aec11..e7a15e0 100644
+--- a/arch/arm/boot/dts/sun4i-a10-chuwi-v7-cw0825.dts
++++ b/arch/arm/boot/dts/sun4i-a10-chuwi-v7-cw0825.dts
+@@ -95,6 +95,7 @@
+ 		reg = <0x38>;
+ 		interrupt-parent = <&pio>;
+ 		interrupts = <7 21 IRQ_TYPE_EDGE_FALLING>;
++		wake-gpios = <&pio 1 13 GPIO_ACTIVE_HIGH>; /* PB13 */
+ 		pinctrl-names = "default";
+ 		touchscreen-size-x = <1024>;
+ 		touchscreen-size-y = <768>;
+-- 
+2.1.4
+

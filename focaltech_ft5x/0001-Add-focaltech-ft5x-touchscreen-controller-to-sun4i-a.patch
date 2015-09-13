@@ -1,0 +1,43 @@
+From 3546855d416562e600ff9dba67ea0010f92c61ac Mon Sep 17 00:00:00 2001
+From: Bertrik Sikken <bertrik@sikken.nl>
+Date: Sun, 13 Sep 2015 19:36:46 +0200
+Subject: [PATCH 1/2] Add focaltech ft5x touchscreen controller to
+ sun4i-a10-inet97fv2 DTS
+
+---
+ arch/arm/boot/dts/sun4i-a10-inet97fv2.dts | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/arch/arm/boot/dts/sun4i-a10-inet97fv2.dts b/arch/arm/boot/dts/sun4i-a10-inet97fv2.dts
+index 77c31da..52145a8 100644
+--- a/arch/arm/boot/dts/sun4i-a10-inet97fv2.dts
++++ b/arch/arm/boot/dts/sun4i-a10-inet97fv2.dts
+@@ -48,6 +48,7 @@
+ 
+ #include <dt-bindings/gpio/gpio.h>
+ #include <dt-bindings/input/input.h>
++#include <dt-bindings/interrupt-controller/irq.h>
+ 
+ / {
+ 	model = "INet-97F Rev 02";
+@@ -93,6 +94,17 @@
+ 	pinctrl-names = "default";
+ 	pinctrl-0 = <&i2c2_pins_a>;
+ 	status = "okay";
++
++	ft5x: touchscreen@38 {
++		compatible = "focaltech,ft5x";
++		reg = <0x38>;
++		interrupt-parent = <&pio>;
++		interrupts = <7 21 IRQ_TYPE_EDGE_FALLING>; /* PH21 */
++		wake-gpios = <&pio 1 13 GPIO_ACTIVE_HIGH>; /* PB13 */
++		pinctrl-names = "default";
++		touchscreen-size-x = <800>;
++		touchscreen-size-y = <480>;
++	};
+ };
+ 
+ &lradc {
+-- 
+2.1.4
+
