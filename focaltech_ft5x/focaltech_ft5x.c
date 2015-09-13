@@ -309,7 +309,6 @@ MODULE_DEVICE_TABLE(i2c, ft5x_i2c_id);
 
 static struct i2c_driver ft5x_driver = {
 	.driver = {
-		   .owner = THIS_MODULE,
 		   .name = "focaltech_ft5x",
 		   .pm = &ft5x_pm_ops,
 		   .of_match_table = ft5x_of_match,
