@@ -11,6 +11,9 @@
  *
  * Red Hat authors:
  * Hans de Goede <hdegoede@redhat.com>
+ *
+ * This module borrows heavily from chipone_icn8318.c.
+ * Firmware updates are not supported by this module.
  */
 
 #include <linux/delay.h>
