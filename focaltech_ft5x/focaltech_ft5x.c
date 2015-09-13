@@ -2,6 +2,7 @@
  * Driver for FocalTech ft5x i2c touchscreen controller
  *
  * Copyright (c) 2015 Red Hat Inc.
+ * Copyright (c) 2015 Bertrik Sikken <bertrik@sikken.nl>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -12,6 +13,7 @@
  * Hans de Goede <hdegoede@redhat.com>
  */
 
+#include <linux/delay.h>
 #include <linux/gpio/consumer.h>
 #include <linux/interrupt.h>
 #include <linux/i2c.h>
@@ -27,6 +29,16 @@
 #define FT5X_EVENT_RELEASED     4
 #define FT5X_EVENT_KEPT         8
 
+/* FT5X_REG_PMODE */
+#define FT5X_REG_PMODE		0xA5
+#define PMODE_ACTIVE        	0x00
+#define PMODE_MONITOR       	0x01
+#define PMODE_STANDBY       	0x02
+#define PMODE_HIBERNATE     	0x03
+
+#define TS_WAKEUP_LOW_PERIOD	20
+#define TS_WAKEUP_HIGH_PERIOD	20
+
 struct ft5x_touch {
 	__u8 data[4];
 	__u16 padding;
@@ -41,7 +53,7 @@ struct ft5x_touch_data {
 struct ft5x_data {
 	struct i2c_client *client;
 	struct input_dev *input;
-//      struct gpio_desc *wake_gpio;
+	struct gpio_desc *wake_gpio;
 	u32 max_x;
 	u32 max_y;
 	bool invert_x;
@@ -66,6 +78,18 @@ static int ft5x_read_touch_data(struct i2c_client *client,
 	};
 
 	return i2c_transfer(client->adapter, msg, 2);
+}
+
+static int ft5x_write_register(struct i2c_client *client, u8 reg, u8 data)
+{
+	u8 buf[2] = { reg, data };
+	struct i2c_msg msg = {
+		.addr = client->addr,
+		.len = 2,
+		.buf = buf
+	};
+
+	return i2c_transfer(client->adapter, &msg, 1);
 }
 
 static inline bool ft5x_touch_active(u8 event)
@@ -133,8 +157,12 @@ static int ft5x_start(struct input_dev *dev)
 {
 	struct ft5x_data *data = input_get_drvdata(dev);
 
+	gpiod_set_value_cansleep(data->wake_gpio, 0);
+	msleep(TS_WAKEUP_LOW_PERIOD);
+	gpiod_set_value_cansleep(data->wake_gpio, 1);
+	msleep(TS_WAKEUP_HIGH_PERIOD);
+
 	enable_irq(data->client->irq);
-//      gpiod_set_value_cansleep(data->wake_gpio, 1);
 
 	return 0;
 }
@@ -144,9 +172,8 @@ static void ft5x_stop(struct input_dev *dev)
 	struct ft5x_data *data = input_get_drvdata(dev);
 
 	disable_irq(data->client->irq);
-//      i2c_smbus_write_byte_data(data->client, FT5X_REG_POWER,
-//                                FT5X_POWER_HIBERNATE);
-//      gpiod_set_value_cansleep(data->wake_gpio, 0);
+
+	ft5x_write_register(data->client, FT5X_REG_PMODE, PMODE_HIBERNATE);
 }
 
 #ifdef CONFIG_PM_SLEEP
@@ -195,13 +222,13 @@ static int ft5x_probe(struct i2c_client *client, const struct i2c_device_id *id)
 	if (!data)
 		return -ENOMEM;
 
-//      data->wake_gpio = devm_gpiod_get(dev, "wake", GPIOD_OUT_LOW);
-//      if (IS_ERR(data->wake_gpio)) {
-//              error = PTR_ERR(data->wake_gpio);
-//              if (error != -EPROBE_DEFER)
-//                      dev_err(dev, "Error getting wake gpio: %d\n", error);
-//              return error;
-//      }
+	data->wake_gpio = devm_gpiod_get(dev, "wake", GPIOD_OUT_LOW);
+	if (IS_ERR(data->wake_gpio)) {
+		error = PTR_ERR(data->wake_gpio);
+		if (error != -EPROBE_DEFER)
+			dev_err(dev, "Error getting wake gpio: %d\n", error);
+		return error;
+	}
 
 	if (of_property_read_u32(np, "touchscreen-size-x", &data->max_x) ||
 	    of_property_read_u32(np, "touchscreen-size-y", &data->max_y)) {
@@ -294,6 +321,5 @@ static struct i2c_driver ft5x_driver = {
 module_i2c_driver(ft5x_driver);
 
 MODULE_DESCRIPTION("FocalTech FT5x I2C Touchscreen Driver");
-MODULE_AUTHOR
-    ("Bertrik Sikken <bertrik@sikken.nl> / Hans de Goede <hdegoede@redhat.com>");
+MODULE_AUTHOR("Hans de Goede <hdegoede@redhat.com>");
 MODULE_LICENSE("GPL");
